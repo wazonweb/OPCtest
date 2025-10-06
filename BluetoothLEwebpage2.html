@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BMV080 PM Broadcast</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 100px;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    #PMValue {
+      font-size: 2.5rem;
+      margin-top: 40px;
+    }
+    #deviceName {
+      margin-top: 10px;
+      font-size: 1rem;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>ESP32 BLE BMV080</h1>
+  <button id="connect">Connect to ESP32</button>
+  <div id="deviceName"></div>
+  <div id="PMValue">-- ug/m^3</div>
+
+  <script>
+    const connectBtn    = document.getElementById('connect');
+    const hrDisplay     = document.getElementById('PMValue');
+    const deviceNameTag = document.getElementById('ESP32_BLE_Server');
+
+    connectBtn.addEventListener('click', async () => {
+      try {
+        // Request any device advertising the PM service
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [{ services: ['00001801-0000-1000-8000-00805f9b34fb'] }]
+        });
+
+        deviceNameTag.textContent = `🖧 Connected to: ${device.name || 'Unknown Device'}`;
+        connectBtn.disabled     = true;
+        connectBtn.textContent  = 'Connecting…';
+
+        const server  = await device.gatt.connect();
+        const service = await server.getPrimaryService('00001801-0000-1000-8000-00805f9b34fb');
+        const char    = await service.getCharacteristic('beb5483f-36e1-4688-b7f5-ea07361b26a8');
+
+        await char.startNotifications();
+        char.addEventListener('characteristicvaluechanged', onPMValueChanged);
+
+        connectBtn.textContent = 'Connected';
+      } catch (err) {
+        console.error(err);
+        alert('Connection failed: ' + err.message);
+        connectBtn.textContent = 'Connect to ESP32 BMV080';
+        connectBtn.disabled    = false;
+      }
+    });
+
+    function onPMValueChanged(event) {
+      const data     = event.target.value;
+      data.getString(0);
+
+      hrDisplay.textContent = `${bpm} bpm`;
+    }
+  </script>
+</body>
+</html>
