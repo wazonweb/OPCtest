@@ -42,7 +42,7 @@
         // Request any device advertising the PM service
         const device = await navigator.bluetooth.requestDevice({
           filters: [{ name: 'ESP32_BLE_Server' }],
-          optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] }]
+          optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b']
         });
 
         deviceNameTag.textContent = `🖧 Connected to: ${device.name || 'Unknown Device'}`;
@@ -75,4 +75,5 @@
 </body>
 
 </html>
+
 
