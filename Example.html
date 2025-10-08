@@ -1,0 +1,35 @@
+<button onclick="connect()">Connect to ESP32</button>
+<button onclick="toggleLED(true)">Turn ON LED</button>
+<button onclick="toggleLED(false)">Turn OFF LED</button>
+<p>Temperature: <span id="temp">--</span> °C</p>
+
+<script>
+  let ledChar, tempChar;
+
+  async function connect() {
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ name: 'ESP32_Sensor' }],
+      optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b']
+    });
+
+    const server = await device.gatt.connect();
+    const service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
+
+    ledChar = await service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
+    tempChar = await service.getCharacteristic('6e400003-b5a3-f393-e0a9-e50e24dcca9e');
+
+    tempChar.startNotifications().then(char => {
+      char.addEventListener('characteristicvaluechanged', event => {
+        const value = new TextDecoder().decode(event.target.value);
+        document.getElementById('temp').textContent = value;
+      });
+    });
+
+    alert("Connected to ESP32!");
+  }
+
+  async function toggleLED(state) {
+    const value = new TextEncoder().encode(state ? "1" : "0");
+    await ledChar.writeValue(value);
+  }
+</script>
