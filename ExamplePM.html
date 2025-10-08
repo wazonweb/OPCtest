@@ -1,8 +1,8 @@
-<button onclick="connect()">Connect to ESP32</button>
-<p>Temperature: <span id="temp">--</span> °C</p>
+<button onclick="connect()">Connect to PM sensor</button>
+<p>PM data: <span id="pm">--</span> ug/m^3</p>
 
 <script>
-  let tempChar;
+  let pmChar;
 
   async function connect() {
     const device = await navigator.bluetooth.requestDevice({
@@ -13,15 +13,16 @@
     const server = await device.gatt.connect();
     const service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
 
-    tempChar = await service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
+    pmChar = await service.getCharacteristic('beb5483f-36e1-4688-b7f5-ea07361b26a8');
 
-    tempChar.startNotifications().then(char => {
+    pmChar.startNotifications().then(char => {
       char.addEventListener('characteristicvaluechanged', event => {
         const value = new TextDecoder().decode(event.target.value);
-        document.getElementById('temp').textContent = value;
+        document.getElementById('pm').textContent = value;
       });
     });
 
-    alert("Connected to ESP32!");
+    alert("Connected to ESP32_BMV080!");
   }
+
 </script>
