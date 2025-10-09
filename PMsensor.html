@@ -89,7 +89,7 @@
     }
 
     function downloadCSV() {
-      let csvContent = "data:text/csv;charset=utf-8,Time,PM10,PM2.5,PM1(ug/m^3)\n";
+      let csvContent = "data:text/csv;charset=utf-8,Time,PM10,PM2.5,PM1(ug/m^3),Obstruction\n";
       csvData.forEach(row => {
         csvContent += row.join(",") + "\n";
       });
@@ -104,3 +104,4 @@
     }
   </script>
 </body>
+
