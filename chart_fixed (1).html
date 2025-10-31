@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chart.js Pan and Zoom Fixed</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    canvas {
+      max-width: 100%;
+      display: block;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chart with Pan and Zoom Enabled</h1>
+  <p>Scroll to zoom, drag to pan. Click below to reset zoom.</p>
+  <canvas id="myChart" width="800" height="400"></canvas>
+  <br><br>
+  <button onclick="chart.resetZoom()">Reset Zoom</button>
+
+  <!-- Required libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.umd.min.js"></script>
+
+  <script>
+    // Register the zoom plugin
+    Chart.register(window['chartjs-plugin-zoom']);
+
+    const ctx = document.getElementById('myChart').getContext('2d');
+
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['10:00', '10:05', '10:10', '10:15', '10:20', '10:25', '10:30'],
+        datasets: [{
+          label: 'PM2.5',
+          data: [12, 19, 3, 5, 2, 8, 15],
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          zoom: {
+            pan: {
+              enabled: true,
+              mode: 'x'
+            },
+            zoom: {
+              wheel: {
+                enabled: true
+              },
+              pinch: {
+                enabled: true
+              },
+              mode: 'x'
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Time'
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'PM2.5 Value'
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

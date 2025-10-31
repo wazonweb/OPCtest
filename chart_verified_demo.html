@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chart.js Verified Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    #chart-container {
+      width: 800px;
+      height: 400px;
+      margin: auto;
+    }
+    canvas {
+      background: #fff;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chart.js Pan and Zoom Verified Demo</h1>
+  <p>Use mouse wheel to zoom, click and drag to pan. Click below to reset zoom.</p>
+  <div id="chart-container">
+    <canvas id="myChart"></canvas>
+  </div>
+  <br>
+  <button onclick="chart.resetZoom()">Reset Zoom</button>
+
+  <!-- Required libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.umd.min.js"></script>
+
+  <script>
+    const zoomPlugin = window['chartjs-plugin-zoom'];
+    Chart.register(zoomPlugin);
+
+    const ctx = document.getElementById('myChart').getContext('2d');
+
+    window.chart = new Chart(ctx, {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: 'Sample Data',
+          data: [
+            {x: 1, y: 1},
+            {x: 2, y: 3},
+            {x: 3, y: 2},
+            {x: 4, y: 5},
+            {x: 5, y: 4}
+          ],
+          backgroundColor: 'rgba(75, 192, 192, 1)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          zoom: {
+            pan: {
+              enabled: true,
+              mode: 'xy'
+            },
+            zoom: {
+              wheel: {
+                enabled: true
+              },
+              pinch: {
+                enabled: true
+              },
+              mode: 'xy'
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            position: 'bottom',
+            title: {
+              display: true,
+              text: 'X Axis'
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Y Axis'
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
