@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PM Sensor Graph</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h2>Real-Time PM Sensor Data</h2>
+  <button onclick="connect()">Connect to PM Sensor</button>
+  <button onclick="downloadCSV()">Save data CSV</button>
+  <button onclick="clearChart()">Clear Chart</button>
+  <canvas id="sensorChart" width="800" height="400"></canvas>
+
+  <script>
+    let sensorChar;
+    const sensorData = {
+      labels: [],
+      datasets: [
+        {
+          label: 'PM10',
+          data: [],
+          borderColor: 'red',
+          fill: false
+        },
+        {
+          label: 'PM2.5',
+          data: [],
+          borderColor: 'blue',
+          fill: false
+        },
+        {
+          label: 'PM1',
+          data: [],
+          borderColor: 'green',
+          fill: false
+        },
+        {
+          label: 'Obst',
+          data: [],
+          borderColor: 'black',
+          fill: false
+        }
+      ]
+    };
+
+    const csvData = []; // Store [timestamp, PM10, PM2.5, PM1, Obstruction]
+
+    const config = {
+      type: 'line',
+      data: sensorData,
+      options: {
+        scales: {
+          x: { title: { display: true, text: 'Time' }},
+          y: { title: { display: true, text: 'PM (ug/m^3)' }}
+        }
+      }
+    };
+
+    const sensorChart = new Chart(document.getElementById('sensorChart'), config);
+
+    async function connect() {
+      const device = await navigator.bluetooth.requestDevice({
+        filters: [{ name: 'ESP32_BLE_Server' },{name: 'PMSensor_BLE_Server'},{name: 'BMV080_BLE_Server'},{name: 'OPCN3_BLE_Server'}],
+        optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b']
+      });
+
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
+      sensorChar = await service.getCharacteristic('beb5483f-36e1-4688-b7f5-ea07361b26a8');
+
+      sensorChar.startNotifications().then(char => {
+        char.addEventListener('characteristicvaluechanged', event => {
+          const value = new TextDecoder().decode(event.target.value);
+          const [text, PM10, PM25, PM1, obstructionFlag] = value.split(',').map(parseFloat);
+          const now = new Date().toLocaleTimeString();
+
+          if (!isNaN(PM10) && !isNaN(PM25) && !isNaN(PM1)) {
+            sensorData.labels.push(now);
+            sensorData.datasets[0].data.push(PM10);
+            sensorData.datasets[1].data.push(PM25);
+            sensorData.datasets[2].data.push(PM1);
+            sensorData.datasets[3].data.push(obstructionFlag);
+            csvData.push([now, PM10, PM25, PM1, obstructionFlag]);
+            sensorChart.update();
+          }
+        });
+      });
+
+      alert("Connected to PM Sensor!");
+    }
+
+    function downloadCSV() {
+      let csvContent = "data:text/csv;charset=utf-8,Time,PM10,PM2.5,PM1(ug/m^3),Obstruction\n";
+      csvData.forEach(row => {
+        csvContent += row.join(",") + "\n";
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "PMsensor_data.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function clearChart() {
+      // Clear data in each dataset
+      sensorChart.data.datasets.forEach(dataset => {dataset.data = []; });
+
+      // Optionally clear labels if needed (this appears to reset the x-axis, which is what I want)
+      sensorChart.data.labels = [];
+
+      // Update the chart
+      sensorChart.update();
+
+      //Also clear the data array itself. Otherwise, when saving to csv, all the data since when the BLE connection was made is saved regardless of whether the chart displayed data was cleared or not.
+      csvData.length = 0; //This should effectively clear the array in place
+   }
+  </script>
+</body>
