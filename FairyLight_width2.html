@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ESP32 BLE Control</title>
+  <!-- Viewport meta tag for proper zoom on phones and laptops -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    /* Optional: make newline rendering explicit for notifications */
+    #temp { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <button id="connectBtn">Connect to ESP32</button>
+
+  <p>
+    <input type="text" id="textValue" placeholder="Enter text" autocomplete="off">
+  </p>
+  <p>
+    <button id="sendBtn">Send Text</button>
+  </p>
+  <p>
+    <span id="temp"></span>
+  </p>
+
+  <script>
+    let ledChar = null;
+    let tempChar = null;
+
+    async function connect() {
+      try {
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [{ name: 'ESP32_FairyLight' }],
+          optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b']
+        });
+
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
+
+        ledChar = await service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
+        tempChar = await service.getCharacteristic('6e400003-b5a3-f393-e0a9-e50e24dcca9e');
+
+        await tempChar.startNotifications();
+        tempChar.addEventListener('characteristicvaluechanged', (event) => {
+          let value = new TextDecoder().decode(event.target.value);
+          // Normalize CRLF/CR to LF for consistent rendering
+          value = value.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+          document.getElementById('temp').textContent = value;
+        });
+
+        alert('Connected to ESP32!');
+      } catch (err) {
+        console.error(err);
+        alert('Failed to connect: ' + err.message);
+      }
+    }
+
+    async function sendText() {
+      const input = document.getElementById('textValue');
+      const textValue = input.value.trim();
+
+      if (!ledChar) {
+        alert('Not connected yet—please click "Connect to ESP32" first.');
+        return;
+      }
+      if (!textValue) {
+        // No alert here; just ignore empty sends
+        return;
+      }
+
+      try {
+        const encodedValue = new TextEncoder().encode(textValue);
+        await ledChar.writeValue(encodedValue);
+        // Optional: give lightweight feedback without blocking UI
+        // alert(`Sent: ${textValue}`);
+        input.value = '';
+        input.focus();
+      }
+	  catch (err) {
+        console.error(err);
+        alert('Failed to send: ' + err.message);
+      }
+    }
+
+    // Wire up UI events after DOM is ready
+    const connectBtn = document.getElementById('connectBtn');
+    const sendBtn = document.getElementById('sendBtn');
+    const textInput = document.getElementById('textValue');
+
+    connectBtn.addEventListener('click', connect);
+    sendBtn.addEventListener('click', sendText);
+
+    // Enter-to-send: trigger sendText when Enter is pressed in the input
+    textInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault(); // avoids any implicit form submission
+        sendText();
+      }
+    });
+  </script>
+</body>
